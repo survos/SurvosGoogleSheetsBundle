@@ -1,0 +1,9 @@
+/bin
+/vendor/
+composer.lock
+/phpunit.xml
+/tests/cache
+node_modules
+
+# until tests are working...
+/Tests
