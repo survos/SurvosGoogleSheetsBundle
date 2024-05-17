@@ -2,7 +2,13 @@
     "name": "survos/google-sheets-bundle",
     "type": "symfony-bundle",
     "description": "This bundle manages Google Spreadsheets using the Google api.",
-    "keywords": ["Symfony", "bundle", "google", "spreadsheets", "api"],
+    "keywords": [
+        "Symfony",
+        "bundle",
+        "google",
+        "spreadsheets",
+        "api"
+    ],
     "homepage": "https://github.com/survos/SurvosGoogleSheetsBundle",
     "license": "MIT",
     "minimum-stability": "beta",
@@ -24,7 +30,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Survos\\GoogleSheetsBundle\\": "src" }
+            "Survos\\GoogleSheetsBundle\\": "src"
+        }
     },
     "config": {
         "bin-dir": "bin"
