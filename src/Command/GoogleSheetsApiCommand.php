@@ -26,7 +26,7 @@ class GoogleSheetsApiCommand extends Command
         $this
         ->addOption('function', null, InputOption::VALUE_OPTIONAL,'sheets api function to be executed')
         ->addOption('title', null, InputOption::VALUE_OPTIONAL,'sheet title in string')
-        ->addOption('id', null, InputOption::VALUE_OPTIONAL,'spreadsheets id in integer', 0)
+        ->addOption('id', null, InputOption::VALUE_OPTIONAL,'spreadsheets id')
         ->addOption('header', null, InputOption::VALUE_OPTIONAL,'number of rows for the header', 0)
         ->addOption('data', null, InputOption::VALUE_OPTIONAL,'grid data in 2 dimensional array');
     }
@@ -50,7 +50,9 @@ class GoogleSheetsApiCommand extends Command
         }
 
         if($function == 'get') {
+            $service->setSheetServices($id);
             $response = $service->getGoogleSpreadSheets();
+            dd($response);
         } elseif($function == 'create') {
             $response = $service->createNewSheet($sheetTitle, $data, $header);
         } elseif($function == 'update') {

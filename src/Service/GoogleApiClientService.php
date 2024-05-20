@@ -46,6 +46,7 @@ class GoogleApiClientService
     {
         $credentialsPath = $this->credentials;
         $accessToken = $this->getAccessToken($credentialsPath);
+        dd($accessToken);
         $client->setAccessToken($accessToken);
         return $this->ValidateAccessToken($client, $credentialsPath);
     }
@@ -58,8 +59,9 @@ class GoogleApiClientService
      */
     public function getAccessToken($credentialsPath = ''): array
     {
+        assert($credentialsPath, "missing credentialsPath");
         if (!file_exists($credentialsPath)) {
-            throw new FileNotFoundException('Access Token does not exists in ' . $credentialsPath);
+            throw new FileNotFoundException('Access Token does not exists path ' . $credentialsPath);
         }
         return json_decode(file_get_contents($credentialsPath), true);
     }

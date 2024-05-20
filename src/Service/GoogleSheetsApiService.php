@@ -2,6 +2,8 @@
 
 namespace Survos\GoogleSheetsBundle\Service;
 
+use Google\Service\Sheets;
+use Google\Service\Sheets\Spreadsheet;
 use Google_Service_Sheets;
 use Google_Service_Sheets_ValueRange;
 use Google_Service_Sheets_BatchUpdateSpreadsheetRequest;
@@ -22,14 +24,9 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      *
      * @var GoogleApiClientService
      */
-    protected $clientService;
+    protected GoogleApiClientService $clientService;
 
-    /**
-     * Google Service Sheets
-     *
-     * @var Google_Service_Sheets
-     */
-    protected $sheetService;
+    protected Sheets $sheetService;
 
     /**
      * Goggle Sreadsheets id
@@ -56,7 +53,7 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      * @return boolean
      * @throws InvalidConfigurationException
      */
-    public function setSheetServices($id)
+    public function setSheetServices(string $id)
     {
         if (empty($id)) {
             throw new InvalidConfigurationException("spreadsheets id can not be empty");
@@ -64,25 +61,20 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
 
         $this->id = $id;
         $client = $this->clientService->getClient('offline');   // get api clirent
-        $client->setScopes(implode(' ', [Google_Service_Sheets::DRIVE]));   // set permission
-        $client = $this->clientService->setClientVerification($client); // set varification
+        $client->setScopes(implode(' ', [Sheets::DRIVE]));   // set permission
+//        $client = $this->clientService->setClientVerification($client); // set varification
         $this->sheetService = new Google_Service_Sheets($client);
         return true;
     }
 
-    /**
-     * Get a existing google spreadsheets
-     * Return an array of error messages for an error.
-     *
-     * @return mixed(Google_Service_Sheets|array)
-     */
-    public function getGoogleSpreadSheets()
+    public function getGoogleSpreadSheets(): ?Spreadsheet
     {
-        try {
-            return $this->sheetService->spreadsheets->get($this->id);
-        } catch (\Exception $ex) {
-            return json_decode($ex->getMessage());
-        }
+
+        return $this->sheetService->spreadsheets->get($this->id);
+//        try {
+//        } catch (\Exception $ex) {
+//            return json_decode($ex->getMessage());
+//        }
     }
 
     /**

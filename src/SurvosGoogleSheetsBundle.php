@@ -2,6 +2,7 @@
 
 namespace Survos\GoogleSheetsBundle;
 
+use Survos\GoogleSheetsBundle\Command\GoogleSheetsApiCommand;
 use Survos\GoogleSheetsBundle\Service\GoogleApiClientService;
 use Survos\GoogleSheetsBundle\Service\GoogleSheetsApiService;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -31,16 +32,28 @@ class SurvosGoogleSheetsBundle extends AbstractBundle
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
 
-        $container->setParameter('survos_google_sheets.application_name', $config['application_name']);
-        $container->setParameter('survos_google_sheets.credentials', $config['credentials']);
-        $container->setParameter('survos_google_sheets.client_secret', $config['client_secret']);
-
-        $builder->register('survos_google_sheets.api_client_service', GoogleApiClientService::class)
+        $builder->register($serviceId = 'survos_google_sheets.api_client_service', GoogleApiClientService::class)
+            ->setArgument('$applicationName', $config['application_name'])
+            ->setArgument('$credentials', $config['credentials'])
+            ->setArgument('$clientSecret', $config['client_secret'])
+            ->setPublic(true)
             ->setAutowired(true)
             ;
+        $container->services()->alias(GoogleApiClientService::class, $serviceId);
 
-        $builder->register('survos_google_sheets.sheets_service', GoogleSheetsApiService::class)
+        $builder->register($serviceId = 'survos_google_sheets.sheets_service', GoogleSheetsApiService::class)
+            ->setArgument('$clientService', new Reference('survos_google_sheets.api_client_service'))
+            ->setPublic(true)
             ->setAutowired(true);
+        $container->services()->alias(GoogleSheetsApiService::class, $serviceId);
+
+        // GoogleSheetsApiCommand
+        $builder->autowire(GoogleSheetsApiCommand::class)
+            ->setArgument('$clientService', new Reference('survos_google_sheets.api_client_service'))
+            ->setArgument('$sheetService', new Reference('survos_google_sheets.sheets_service'))
+            ->addTag('console.command')
+        ;
+
 
     }
 

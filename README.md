@@ -66,8 +66,12 @@ Inject GoogleSheetsApiService or obtain it from the container.
 ex) Set up an api client with the spreadsheets id that you want to manage. 
 
 ``` php
-$service = $this->getContainer()->get('survos_google_sheets.sheets_service');
-$service->setSheetServices(YOUR_SPREADSHEETS_ID_HERE);
+    public function __construct(
+        private readonly GoogleApiClientService $clientService,
+        private readonly GoogleSheetsApiService $sheetService,
+    )
+
+$sheetService->setSheetServices(YOUR_SPREADSHEETS_ID_HERE);
 ```
 
 ##### GET
@@ -157,13 +161,3 @@ $data = [
 $service->updateSheet($sheetTitle, $data, $header);
 
 ```
-
-
-
-#### Contributing ####
-Anyone and everyone is welcome to contribute.
-
-If you have any questions or suggestions please [let us know][1].
-
-
-[1]: http://www.ex-situ.com/
