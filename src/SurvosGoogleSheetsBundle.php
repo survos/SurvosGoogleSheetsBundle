@@ -2,6 +2,8 @@
 
 namespace Survos\GoogleSheetsBundle;
 
+use Google\Service\Sheets;
+use Google\Service\Sheets\Sheet;
 use Survos\GoogleSheetsBundle\Command\GoogleSheetsApiCommand;
 use Survos\GoogleSheetsBundle\Service\GoogleApiClientService;
 use Survos\GoogleSheetsBundle\Service\GoogleSheetsApiService;
@@ -32,25 +34,30 @@ class SurvosGoogleSheetsBundle extends AbstractBundle
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
 
-        $builder->register($serviceId = 'survos_google_sheets.api_client_service', GoogleApiClientService::class)
+        $builder->register($apiClientServiceId = 'survos_google_sheets.api_client_service', GoogleApiClientService::class)
             ->setArgument('$applicationName', $config['application_name'])
             ->setArgument('$credentials', $config['credentials'])
             ->setArgument('$clientSecret', $config['client_secret'])
             ->setPublic(true)
             ->setAutowired(true)
             ;
-        $container->services()->alias(GoogleApiClientService::class, $serviceId);
+        $container->services()->alias(GoogleApiClientService::class, $apiClientServiceId);
+        $container->services()->alias(Sheets::class, 'google_sheets.sheets');
 
-        $builder->register($serviceId = 'survos_google_sheets.sheets_service', GoogleSheetsApiService::class)
-            ->setArgument('$clientService', new Reference('survos_google_sheets.api_client_service'))
+        $builder->register($apiServiceId = 'google_sheets.sheets_api_service', GoogleSheetsApiService::class)
+            ->setArgument('$clientService', new Reference($apiClientServiceId))
             ->setPublic(true)
             ->setAutowired(true);
-        $container->services()->alias(GoogleSheetsApiService::class, $serviceId);
+        $container->services()->alias(GoogleSheetsApiService::class, $apiServiceId);
+
+        $builder->register($sheetsServiceId = 'google_sheets.sheets', Sheets::class)
+            ->setPublic(true)
+            ->setAutowired(true);
 
         // GoogleSheetsApiCommand
         $builder->autowire(GoogleSheetsApiCommand::class)
-            ->setArgument('$clientService', new Reference('survos_google_sheets.api_client_service'))
-            ->setArgument('$sheetService', new Reference('survos_google_sheets.sheets_service'))
+            ->setArgument('$clientService', new Reference($apiClientServiceId))
+            ->setArgument('$googleSheetsApiService', new Reference($apiClientServiceId))
             ->addTag('console.command')
         ;
 

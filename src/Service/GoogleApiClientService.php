@@ -17,7 +17,7 @@ class GoogleApiClientService
     /**
      * Initiate the service
      */
-    public function __construct(private string $applicationName = '', private string $credentials = '', private string $clientSecret = '')
+    public function __construct(private readonly string $applicationName = '', private string $credentials = '', private readonly string $clientSecret = '')
     {
     }
 
@@ -31,7 +31,7 @@ class GoogleApiClientService
     {
         $client = new Google_Client();
         $client->setApplicationName($this->applicationName);
-        $client->setAuthConfig($this->clientSecret);
+        $client->setAuthConfig(json_validate($this->clientSecret) ? json_decode($this->clientSecret, true) : $this->clientSecret);
         $client->setAccessType($type);
         return $client;
     }
@@ -57,7 +57,7 @@ class GoogleApiClientService
      * @param string $credentialsPath
      * @return array
      */
-    public function getAccessToken($credentialsPath = ''): array
+    public function getAccessToken(?string $credentialsPath = ''): array
     {
         assert($credentialsPath, "missing credentialsPath");
         if (!file_exists($credentialsPath)) {
@@ -96,7 +96,7 @@ class GoogleApiClientService
         $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
         try {
             return $this->saveAccessToken($credentialsPath, $accessToken);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }

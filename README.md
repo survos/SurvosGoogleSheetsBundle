@@ -2,7 +2,12 @@
 
 Inspired by / Forked from https://github.com/Gabb1995/EXS-GoogleSheetsBundle
 
+## Useful references
 
+* https://mzonline.com/blog/2020-06/pushing-data-google-sheets-sheets-yes-multiples
+* https://developers.google.com/sheets/api/guides/values
+* https://developers.google.com/sheets/api/quickstart/js
+* https://www.lido.app/tutorials/google-sheets-group-tabs
 
 # EXS-GoogleSheetsBundle
 Very simple wrapper for Google sheets integration

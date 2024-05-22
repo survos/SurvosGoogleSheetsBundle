@@ -16,7 +16,7 @@ class GoogleSheetsApiCommand extends Command
 
     public function __construct(
         private readonly GoogleApiClientService $clientService,
-        private readonly GoogleSheetsApiService $sheetService,
+        private readonly GoogleSheetsApiService $googleSheetsApiService,
     )
     {
         parent::__construct();
@@ -36,11 +36,11 @@ class GoogleSheetsApiCommand extends Command
         $function = $input->getOption('function');
         $id = $input->getOption('id');
         $sheetTitle = $input->getOption('title');
-        $data = json_decode($input->getOption('data'));
+        $data = json_decode((string) $input->getOption('data'));
         $header = $input->getOption('header');
 
         $clientService = $this->clientService;
-        $service = $this->sheetService;
+        $service = $this->googleSheetsApiService;
 
         $response = 'no action has been made';
         if($function == 'token') {

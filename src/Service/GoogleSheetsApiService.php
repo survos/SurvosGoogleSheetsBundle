@@ -9,8 +9,10 @@ use Google_Service_Sheets_ValueRange;
 use Google_Service_Sheets_BatchUpdateSpreadsheetRequest;
 use Survos\GoogleSheetsBundle\Service\GoogleApiClientService;
 use Survos\GoogleSheetsBundle\Service\Requests\GoogleSheetsRequests;
+use Symfony\Component\Cache\CacheItem;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use \Exception;
+use Symfony\Contracts\Cache\CacheInterface;
 
 /**
  * Google Sheets sheet api service class
@@ -19,14 +21,6 @@ use \Exception;
  */
 class GoogleSheetsApiService extends GoogleSheetsRequests
 {
-    /**
-     * Client service
-     *
-     * @var GoogleApiClientService
-     */
-    protected GoogleApiClientService $clientService;
-
-    protected Sheets $sheetService;
 
     /**
      * Goggle Sreadsheets id
@@ -35,14 +29,12 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      */
     protected $id;
 
-    /**
-     * Initiate the service
-     *
-     * @param GoogleApiClientService $clientService
-     */
-    public function __construct(GoogleApiClientService $clientService)
+    public function __construct(
+        protected GoogleApiClientService $clientService,
+        protected Sheets $googleSheetsService,
+        private CacheInterface $cache
+    )
     {
-        $this->clientService = $clientService;
     }
 
     /**
@@ -53,7 +45,7 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      * @return boolean
      * @throws InvalidConfigurationException
      */
-    public function setSheetServices(string $id)
+    public function setSheetServices(string $id): bool
     {
         if (empty($id)) {
             throw new InvalidConfigurationException("spreadsheets id can not be empty");
@@ -62,15 +54,37 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
         $this->id = $id;
         $client = $this->clientService->getClient('offline');   // get api clirent
         $client->setScopes(implode(' ', [Sheets::DRIVE]));   // set permission
-//        $client = $this->clientService->setClientVerification($client); // set varification
-        $this->sheetService = new Google_Service_Sheets($client);
+//        $client = $this->clientService->setClientVerification($client); // set verification
+        $this->googleSheetsService = new Google_Service_Sheets($client);
         return true;
     }
 
     public function getGoogleSpreadSheets(): ?Spreadsheet
     {
 
-        return $this->sheetService->spreadsheets->get($this->id);
+        return $this->googleSheetsService->spreadsheets->get($this->id);
+//        try {
+//        } catch (\Exception $ex) {
+//            return json_decode($ex->getMessage());
+//        }
+    }
+
+    public function getValueRange($range='A1:B2'): Sheets\ValueRange
+    {
+        return $this->googleSheetsService->spreadsheets_values->get($this->id, $range);
+    }
+    public function getValues($range='A1:B2', bool $refresh = false): array
+    {
+        // this is easily cachable.
+        $key = md5($range);
+        $values = $this->cache->get($key, function (CacheItem $item) use ($range) {
+            $valueRange = $this->getValueRange($range);
+            $values = $valueRange->getValues();
+            return $values;
+        });
+        return $values;
+//        dd(cachedValues: $values);
+
 //        try {
 //        } catch (\Exception $ex) {
 //            return json_decode($ex->getMessage());
@@ -107,8 +121,8 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      */
     public function addNewSheet($title, $data = [])
     {
-        if(empty($data)) {
-            $gidProperties = ["rowCount" =>  1000, "columnCount" => 26];
+        if (empty($data)) {
+            $gidProperties = ["rowCount" => 1000, "columnCount" => 26];
             return $this->addNewSheetWithoutData($title, $gidProperties);
         }
         return $this->addNewSheetWithData($title);
@@ -127,9 +141,9 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
             $request = $this->getNewSheetRequest($title);
             $requestBody = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest();
             $requestBody->setRequests($request);
-            $this->sheetService->spreadsheets->batchUpdate($this->id, $requestBody);
+            $this->googleSheetsService->spreadsheets->batchUpdate($this->id, $requestBody);
             return true;
-        } catch (Exception $ex) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -146,9 +160,9 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
             $request = $this->getNewSheetRequest($title, 'GRID', $gidProperties);
             $requestBody = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest();
             $requestBody->setRequests($request);
-            $this->sheetService->spreadsheets->batchUpdate($this->id, $requestBody);
+            $this->googleSheetsService->spreadsheets->batchUpdate($this->id, $requestBody);
             return true;
-        } catch (Exception $ex) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -161,9 +175,9 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      * @param int $header
      * @return int
      */
-    public function insertDataForNewSheet($title = '', $data = [], $header = 0)
+    public function insertDataForNewSheet(?string $title = '', $data = [], $header = 0)
     {
-        if(is_array($data) && count($data) > 0) {
+        if (is_array($data) && count($data) > 0) {
             $range = $this->getSheetRangeByData($title, $data, $header);
             return $this->InsertSheetData($range, $data);
         }
@@ -176,12 +190,12 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      *
      * @param string $title
      * @param array $data
-     * @param int $header
+     * @param int $header "the header row number"
      * @param string $startCol
      * @return string
      * @throws InvalidConfigurationException
      */
-    public function getSheetRangeByData($title = '', $data = [], $header = 0, $startCol = 'A')
+    public function getSheetRangeByData(?string $title = '', $data = [], $header = 0, string $startCol = 'A'): string
     {
         if (!is_array($data) || empty($title)) {
             throw new InvalidConfigurationException("Sheet title is missing or incorrect data format");
@@ -203,16 +217,16 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      * @return string
      * @throws InvalidConfigurationException
      */
-    public function getEndColRange($startCol = 'A', $numCols = 0)
+    public function getEndColRange($startCol = 'A', $numCols = 0): string
     {
-        if($numCols > 676) {
+        if ($numCols > 676) {
             throw new InvalidConfigurationException("Out of range for number of columns, use InsertSheetData()");
         } elseif ($numCols > 26) {
-            $repeat = (int) floor($numCols / 26) - 1;
-            $leftOver = (int) ($numCols % 26) - 1;
+            $repeat = (int)floor($numCols / 26) - 1;
+            $leftOver = (int)($numCols % 26) - 1;
             $endCol = chr(ord($startCol) + $leftOver);
             $preCol = chr(ord($startCol) + $repeat);
-            return $preCol.$endCol;
+            return $preCol . $endCol;
         }
         return chr(ord($startCol) + ($numCols - 1));
     }
@@ -225,8 +239,9 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      * @return int
      * @throws InvalidConfigurationException
      */
-    public function getNumberOfDataCols($rows, $data)
+    public function getNumberOfDataCols(array $rows, $data): int
     {
+        assert(!empty($data), "missing data");
         if (isset($data[$rows[0]]) && is_array($data[$rows[0]])) {
             $cols = array_keys($data[$rows[0]]);
             return count($cols);
@@ -241,15 +256,15 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      * @param array $data
      * @return int
      */
-    public function InsertSheetData($range, $data)
+    public function insertSheetData($range, $data)
     {
-        if(!empty($range) && !empty($data)) {
+        if (!empty($range) && !empty($data)) {
             $inputOption = ['valueInputOption' => 'RAW'];
             $requestBody = new Google_Service_Sheets_ValueRange();
             $requestBody->setMajorDimension('ROWS');
             $requestBody->setRange($range);
             $requestBody->setValues($data);
-            $response = $this->sheetService->spreadsheets_values->update($this->id, $range, $requestBody, $inputOption);
+            $response = $this->googleSheetsService->spreadsheets_values->update($this->id, $range, $requestBody, $inputOption);
             return $response->getUpdatedRows();
         }
         return 0;
@@ -267,9 +282,9 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
             $request = $this->getClearSheetRequest($sheetId);
             $requestBody = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest();
             $requestBody->setRequests($request);
-            $this->sheetService->spreadsheets->batchUpdate($this->id, $requestBody);
+            $this->googleSheetsService->spreadsheets->batchUpdate($this->id, $requestBody);
             return true;
-        } catch (Exception $ex) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -298,12 +313,12 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
     public function deleteSheetById($sheetId)
     {
         try {
-           $request = $this->getDeleteSheetRequest($sheetId);
+            $request = $this->getDeleteSheetRequest($sheetId);
             $requestBody = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest();
             $requestBody->setRequests($request);
-            $this->sheetService->spreadsheets->batchUpdate($this->id, $requestBody);
+            $this->googleSheetsService->spreadsheets->batchUpdate($this->id, $requestBody);
             return true;
-        } catch (Exception $ex) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -331,7 +346,7 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      * @param int $header
      * @return mixed(int|boolean)
      */
-    public function updateSheet($title, $data, $header)
+    public function updateSheet(?string $title, $data, $header)
     {
         $range = $this->getSheetRangeByData($title, $data, $header);
         if ($range) {
