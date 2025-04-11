@@ -32,7 +32,8 @@
     "require-dev": {
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.4",
-        "rector/rector": "dev-main"
+        "rector/rector": "dev-main",
+        "symfony/cache": "^7.2"
     },
     "autoload": {
         "psr-4": {
