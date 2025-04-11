@@ -7,6 +7,7 @@ use Google\Service\Sheets\Sheet;
 use Survos\GoogleSheetsBundle\Command\GoogleSheetsApiCommand;
 use Survos\GoogleSheetsBundle\Service\GoogleApiClientService;
 use Survos\GoogleSheetsBundle\Service\GoogleSheetsApiService;
+use Survos\GoogleSheetsBundle\Service\SheetService;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -54,8 +55,19 @@ class SurvosGoogleSheetsBundle extends AbstractBundle
             ->setPublic(true)
             ->setAutowired(true);
 
+        // for download
+        $builder->autowire(SheetService::class)
+            ->setAutowired(true)
+            ->setPublic(true)
+            ->setAutoconfigured(true)
+            ->setArgument('$aliases', $config['aliases'])
+        ;
+
         // GoogleSheetsApiCommand
         $builder->autowire(GoogleSheetsApiCommand::class)
+            ->setAutowired(true)
+            ->setPublic(true)
+            ->setAutoconfigured(true)
             ->setArgument('$clientService', new Reference($apiClientServiceId))
             ->setArgument('$googleSheetsApiService', new Reference($apiClientServiceId))
             ->addTag('console.command')
@@ -80,6 +92,14 @@ class SurvosGoogleSheetsBundle extends AbstractBundle
             ->scalarNode('client_secret')
                 ->isRequired()
                 ->cannotBeEmpty()
+            ->end()
+            ->arrayNode('aliases')
+                ->arrayPrototype()
+                    ->children()
+                    ->scalarNode('code')->end()
+                    ->scalarNode('url')->end()
+                    ->end()
+                ->end()
             ->end()
         ->end()
         ;

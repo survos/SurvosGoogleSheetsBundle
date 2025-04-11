@@ -3,6 +3,7 @@
 namespace Survos\GoogleSheetsBundle\Service;
 
 use Google\Service\Sheets;
+use Google\Service\Sheets\Sheet;
 use Google\Service\Sheets\Spreadsheet;
 use Google_Service_Sheets;
 use Google_Service_Sheets_ValueRange;
@@ -27,7 +28,7 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
      *
      * @var string
      */
-    protected $id;
+    protected string $id;
 
     public function __construct(
         protected GoogleApiClientService $clientService,
@@ -59,10 +60,16 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
         return true;
     }
 
-    public function getGoogleSpreadSheets(): ?Spreadsheet
+    /**
+     * Poorly named
+     *
+     * @return Spreadsheet|null
+     * @throws \Google\Service\Exception
+     */
+    public function getGoogleSpreadSheets(?string $id=null): ?Spreadsheet
     {
 
-        return $this->googleSheetsService->spreadsheets->get($this->id);
+        return $this->googleSheetsService->spreadsheets->get($id ?? $this->id);
 //        try {
 //        } catch (\Exception $ex) {
 //            return json_decode($ex->getMessage());
@@ -371,4 +378,6 @@ class GoogleSheetsApiService extends GoogleSheetsRequests
         }
         return false;
     }
+
+
 }
