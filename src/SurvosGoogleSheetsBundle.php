@@ -6,6 +6,7 @@ use Google\Service\Sheets;
 use Google\Service\Sheets\Sheet;
 use Survos\GoogleSheetsBundle\Command\GoogleSheetsApiCommand;
 use Survos\GoogleSheetsBundle\Service\GoogleApiClientService;
+use Survos\GoogleSheetsBundle\Service\GoogleDriveService;
 use Survos\GoogleSheetsBundle\Service\GoogleSheetsApiService;
 use Survos\GoogleSheetsBundle\Service\SheetService;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -44,6 +45,11 @@ class SurvosGoogleSheetsBundle extends AbstractBundle
             ;
         $container->services()->alias(GoogleApiClientService::class, $apiClientServiceId);
         $container->services()->alias(Sheets::class, 'google_sheets.sheets');
+
+        $builder->register(GoogleDriveService::class)
+            ->setPublic(true)
+            ->setAutowired(true)
+            ->setAutoconfigured(true);
 
         $builder->register($apiServiceId = 'google_sheets.sheets_api_service', GoogleSheetsApiService::class)
             ->setArgument('$clientService', new Reference($apiClientServiceId))

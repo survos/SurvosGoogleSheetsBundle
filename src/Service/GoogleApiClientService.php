@@ -17,7 +17,10 @@ class GoogleApiClientService
     /**
      * Initiate the service
      */
-    public function __construct(private readonly string $applicationName = '', private string $credentials = '', private readonly string $clientSecret = '')
+    public function __construct(
+        private readonly string $applicationName = '',
+        private string $credentials = '',
+        private readonly string $clientSecret = '')
     {
     }
 
@@ -31,7 +34,15 @@ class GoogleApiClientService
     {
         $client = new Google_Client();
         $client->setApplicationName($this->applicationName);
-        $client->setAuthConfig(json_validate($this->clientSecret) ? json_decode($this->clientSecret, true) : $this->clientSecret);
+        $client->setAuthConfig($config = json_validate($this->clientSecret) ? json_decode($this->clientSecret, true) : $this->clientSecret);
+
+//        $client->setAuthConfig($_SERVER['DOCUMENT_ROOT']. ".." . '/google.json'); // Use app root path
+        $client->setScopes([
+            \Google_Service_Sheets::SPREADSHEETS_READONLY,
+            \Google_Service_Drive::DRIVE_READONLY
+        ]);
+
+//        dd($this->clientSecret, $config, $type);
         $client->setAccessType($type);
         return $client;
     }
