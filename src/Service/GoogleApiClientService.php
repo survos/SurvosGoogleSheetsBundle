@@ -4,6 +4,7 @@ namespace Survos\GoogleSheetsBundle\Service;
 
 use Google_Client;
 use Google_Service_Sheets;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException;
 
 /**
@@ -20,8 +21,14 @@ class GoogleApiClientService
     public function __construct(
         private readonly string $applicationName = '',
         private string $credentials = '',
-        private readonly string $clientSecret = '')
+        private readonly string $clientSecret = '',
+        #[Autowire("%env(JSON_AUTH_DEFLATED)%")]  private ?string             $googleJsonAuthDeflated=null,
+
+    )
     {
+//        $credentialsJson = $this->inflate($this->googleJsonAuthDeflated);
+//        $credentials = json_decode($credentialsJson, true);
+
     }
 
     /**
@@ -33,8 +40,14 @@ class GoogleApiClientService
     public function getClient($type = 'offline'): Google_Client
     {
         $client = new Google_Client();
-        $client->setApplicationName($this->applicationName);
+//        $client->setApplicationName($this->applicationName);
+//        $deflated = $this->deflate($this->googleJsonAuthDeflated);
+//        dd(deflated: $deflated, json: $this->clientSecret, orig: $this->deflate($this->clientSecret));
+
+//        dd($this->clientSecret);
+
         $client->setAuthConfig($config = json_validate($this->clientSecret) ? json_decode($this->clientSecret, true) : $this->clientSecret);
+//        dd($config, $deflated, $this->inflate($deflated));
 
 //        $client->setAuthConfig($_SERVER['DOCUMENT_ROOT']. ".." . '/google.json'); // Use app root path
         $client->setScopes([
@@ -156,4 +169,18 @@ class GoogleApiClientService
         $client->setScopes(implode(' ', [Google_Service_Sheets::DRIVE]));
         return $this->createNewAccessToken($client);
     }
+
+    private function inflate(string $input)
+    {
+        return gzinflate(base64_decode(strtr($input, '-_', '+/')));
+
+    }
+
+    public function deflate(string $input)
+    {
+        $deflated = gzdeflate($input, 9);
+        $deflatedString = strtr(base64_encode($deflated), '+/', '-_');
+        return $deflatedString;
+    }
+
 }
