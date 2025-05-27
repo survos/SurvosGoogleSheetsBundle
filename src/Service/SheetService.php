@@ -80,7 +80,6 @@ class SheetService
 //        dd($url);
 //        dump($url);
 //        dd(file_get_contents($url));
-        dd($csv);
         return $csv;
 
     }
@@ -93,7 +92,7 @@ class SheetService
 
     public function downloadSheetToLocal(string $sheetId, string $localFilename): array
     {
-        dd(get_defined_vars(), $this->aliases);
+//        dd(get_defined_vars(), $this->aliases);
         $files = [];
         $dir = $this->dataDir . '/' . $project->getCode();
         if (!file_exists($dir)) {

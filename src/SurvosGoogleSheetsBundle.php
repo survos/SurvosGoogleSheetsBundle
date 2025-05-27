@@ -69,13 +69,25 @@ class SurvosGoogleSheetsBundle extends AbstractBundle
             ->setArgument('$aliases', $config['aliases'])
         ;
 
+
+        /* removed until this could be fixed
+        /g/sites/pgsc$ c googlesheets:execute
+
+In GoogleSheetsApiService.php line 49:
+
+  Survos\GoogleSheetsBundle\Service\GoogleSheetsApiService::setSheetServices(): Argument #1 ($id) must be of type string, null given, called in /home/tac/g/sites/survos/packages/google-sheets-bundle/src/Command/GoogleShe
+  etsApiCommand.php on line 49
+
+        */
+
         // GoogleSheetsApiCommand
+        if (0)
         $builder->autowire(GoogleSheetsApiCommand::class)
             ->setAutowired(true)
             ->setPublic(true)
             ->setAutoconfigured(true)
             ->setArgument('$clientService', new Reference($apiClientServiceId))
-            ->setArgument('$googleSheetsApiService', new Reference($apiClientServiceId))
+            ->setArgument('$googleSheetsApiService', new Reference($apiServiceId))
             ->addTag('console.command')
         ;
 
