@@ -57,30 +57,48 @@ class SheetService
             $sheetName = $sheet->getProperties()->getTitle();
             $range = $sheetName; // here we use the name of the Sheet to get all the rows
             $sheetId = $sheet->getProperties()->getSheetId();
-            $url = sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=csv&gid=%s',
-                $spreadsheetId, $sheetId);
-            if ($refresh) {
-                $this->cache->delete($sheetId);
-            }
-            $data =  $this->cache->get($sheetId, function (CacheItem $item) use ($sheetName, $url) {
-                $item->expiresAfter(3600);
-                return file_get_contents($url);
-            });
-            $csv[$sheetName] = $data;
+            // $url = sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=csv&gid=%s',
+            //     $spreadsheetId, $sheetId);
+            // if ($refresh) {
+            //     $this->cache->delete($sheetId);
+            // }
+            // $data =  $this->cache->get($sheetId, function (CacheItem $item) use ($sheetName, $url) {
+            //     $item->expiresAfter(3600);
+            //     return file_get_contents($url);
+            // });
+            // $csv[$sheetName] = $data;
             // @todo: make this a parameter
             $options = [
 //                'valueRenderOption' => 'FORMULA'
             ];
-//            $response = $service->spreadsheets_values->get($spreadsheetId, $range, $options);
-//            $values = $response->getValues();
-//            dd($values, $sheetName);
-            $function && $function($sheetName, $data);
+           $response = $service->spreadsheets_values->get($spreadsheetId, $range, $options);
+           $values = $response->getValues();
+
+           // Open a memory stream for writing
+            $fp = fopen('php://temp', 'r+');
+
+            if (is_array($values) && !empty($values)) {
+                foreach ($values as $row) {
+                    fputcsv($fp, $row);
+                }
+                // Rewind the memory stream
+                rewind($fp);
+                // Read the CSV string from memory
+                $csv_string = stream_get_contents($fp);
+                fclose($fp);
+                //dd($csv_string);
+                //dd($values, $sheetName);
+                $function && $function($sheetName, $csv_string);
+            } else {
+
+            }
+
 //            return $values;
         }
 //        dd($url);
 //        dump($url);
 //        dd(file_get_contents($url));
-        return $csv;
+        return [];
 
     }
 
@@ -90,18 +108,18 @@ class SheetService
         return $this->googleSheetsApiService->getGoogleSpreadSheets($id);
     }
 
-    public function downloadSheetToLocal(string $sheetId, string $localFilename): array
+    public function downloadSheetToLocal(string $sheetId, string $localFilename, ?string $dataDir): array
     {
 //        dd(get_defined_vars(), $this->aliases);
         $files = [];
-        $dir = $this->dataDir . '/' . $project->getCode();
-        if (!file_exists($dir)) {
-            try {
-                mkdir($dir, 0777, true);
-            } catch (\Exception $exception) {
-                throw new \Exception('Could not create directory ' . $dir . ' ' . $exception->getMessage()) ;
-            }
-        }
+//        $dir = $this->dataDir . '/' . $project->getCode();
+//        if (!file_exists($dir)) {
+//            try {
+//                mkdir($dir, 0777, true);
+//            } catch (\Exception $exception) {
+//                throw new \Exception('Could not create directory ' . $dir . ' ' . $exception->getMessage()) ;
+//            }
+//        }
 
 
         $this->getData($sheetId,
