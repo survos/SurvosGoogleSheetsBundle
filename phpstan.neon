@@ -3,13 +3,11 @@ parameters:
     inferPrivatePropertyTypeFromConstructor: true
     paths:
         - ./src/
-        - ./vendor
 
     excludePaths:
 #      - 'src/Resources/skeleton'
 #      - */cache/*
        analyse:
-                  - ./vendor
 
     ignoreErrors:
         - '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition::children\(\).#'
