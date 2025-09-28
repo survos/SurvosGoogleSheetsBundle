@@ -88,7 +88,7 @@ class SheetService
                 fclose($fp);
                 //dd($csv_string);
                 //dd($values, $sheetName);
-                $function && $function($sheetName, $csv_string);
+                $function && $function($sheetName, $csv_string, $values);
             } else {
 
             }

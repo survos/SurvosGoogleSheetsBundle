@@ -22,7 +22,7 @@
     ],
     "type": "symfony-bundle",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "ext-zlib": "*",
         "symfony/config": "^7.3",
         "symfony/dependency-injection": "^7.3",
@@ -32,9 +32,9 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^2.0",
-        "phpunit/phpunit": "^11.4",
+        "phpunit/phpunit": "^12",
         "rector/rector": "^2.0",
-        "symfony/cache": "^7.2"
+        "symfony/cache": "^7.3"
     },
     "autoload": {
         "psr-4": {
